@@ -1,0 +1,19 @@
+# Mac OS
+.DS_Store
+
+# python
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+venv
+.venv
+
+# environment
+.env*
+!.env*.example
+
+# vscode
+.vscode
+
+# poetry local settings
+**/poetry.toml
