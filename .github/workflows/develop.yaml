@@ -44,6 +44,4 @@ jobs:
           tags: |
             type=ref,event=branch
             type=semver,pattern={{major}}.{{minor}}dev
-          flavor: |
-            latest=true
           labels: ${{ steps.meta.outputs.labels }}
