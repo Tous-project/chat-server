@@ -2,8 +2,8 @@ name: development build and push docker image to ghcr.io
 
 on:
   push:
-    branches:
-      - develop
+    tags:
+      - '*dev$'
   pull_request:
     branches:
       - develop
@@ -36,6 +36,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}-dev
             type=semver,pattern={{major}}.{{minor}}-dev
