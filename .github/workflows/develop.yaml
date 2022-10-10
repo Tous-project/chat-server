@@ -46,5 +46,5 @@ jobs:
         with:
           context: ./Auth
           push: true
-          tags: ${{ steps.meta.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
