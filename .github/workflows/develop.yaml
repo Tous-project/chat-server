@@ -42,6 +42,5 @@ jobs:
           context: ./Auth
           push: true
           tags: |
-            type=ref,event=branch
             type=semver,pattern={{major}}.{{minor}}dev
           labels: ${{ steps.meta.outputs.labels }}
