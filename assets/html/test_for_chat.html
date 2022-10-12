@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <textarea id="view" rows="20" cols="50" readonly></textarea>
+        <div id="login_area">
+            <input type="text" id="login_id" />
+            <input type="text" id="room_id" />
+            <button onclick="login(event)">Login</button>
+        </div>
+        <div id="activity_area" hidden>
+            <input type="text" id="username" readonly="readonly"/>
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button onclick="sendMessage(event)">Send</button>
+            <div>
+                <button onclick="leave(event)">Leave</button>
+            </div>
+        </div>
+        <script>
+            var ws = null
+            window.onbeforeunload = function (event) {
+                leave(event)
+            }
+            function leave(event) {
+                if (ws !== null) {
+                    var username = document.getElementById("username")
+                    ws.onclose = function () {};
+                    ws.close()
+                    username.value = ""
+                    document.getElementById("login_area").hidden = false
+                    document.getElementById("activity_area").hidden = true
+                    document.getElementById("view").value = ""
+                }
+            }
+            function login(event) {
+                var user_id = document.getElementById("login_id").value
+                var room_id = document.getElementById("room_id").value
+                if (user_id === "") {
+                    console.log("error")
+                } else {
+                    document.getElementById("login_area").hidden = true
+                    document.getElementById("activity_area").hidden = false
+                    var username = document.getElementById("username")
+                    username.value = user_id
+                    ws = new WebSocket("ws://localhost:8000/ws/" + room_id + "?username=" + user_id);
+                    ws.onmessage = function(event) {
+                        var content = document.createTextNode(event.data)
+                        var textarea = document.getElementById("view")
+                        var received_msg = JSON.parse(event.data)
+                        let action = received_msg.action
+                        if (action === "send_msg") {
+                            textarea.value += received_msg.sender + ": " + received_msg.message + "\n"
+                        } else if (action === "enter") {
+                            textarea.value += received_msg.username + "님이 입장하였습니다.\n"
+                        } else if (action === "leave") {
+                            textarea.value += received_msg.username + "님이 퇴장하였습니다.\n"
+                        }
+                    };
+                }
+            }
+            function sendMessage(event) {
+                var username = document.getElementById("username")
+                var msg = document.getElementById("messageText")
+                var textarea = document.getElementById("view")
+                if (msg.value !== "") {
+                    ws.send(JSON.stringify({"action": "send_msg", "sender": username.value, "message": msg.value}))
+                    textarea.value += "나: " + msg.value + "\n"
+                    msg.value = ''
+                    event.preventDefault()
+                }
+            }
+        </script>
+    </body>
+</html>
