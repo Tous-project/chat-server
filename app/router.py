@@ -19,6 +19,13 @@ async def healthz() -> JSONResponse:
     return Response(status_code=status.HTTP_200_OK)
 
 
+@router.get("/rooms")
+async def get_all_rooms() -> JSONResponse:
+    global chatting_rooms
+    response = {"rooms": list(chatting_rooms.keys())}
+    return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+
 @router.websocket("/ws/{room_id}")
 async def enter_chatting_room(socket: WebSocket, room_id: str, username: str):
     if room_id not in chatting_rooms:
