@@ -5,19 +5,22 @@
     </head>
     <body>
         <h1>WebSocket Chat</h1>
-        <textarea id="view" rows="20" cols="50" readonly></textarea>
-        <div id="login_area">
-            <input type="text" id="login_id" />
-            <input type="text" id="room_id" />
-            <button onclick="login(event)">Login</button>
-        </div>
-        <div id="activity_area" hidden>
-            <input type="text" id="username" readonly="readonly"/>
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button onclick="sendMessage(event)">Send</button>
+        <div id="textarea" hidden>
             <div>
                 <button onclick="leave(event)">Leave</button>
             </div>
+            <textarea id="view" rows="20" cols="50" readonly></textarea>
+        </div>
+        <div id="login_area">
+            <input type="text" id="login_id" placeholder="Input id"/>
+            <button onclick="login(event)">Login</button>
+        </div>
+        <div id="room_list_section" hidden>
+            <ul id="room_list"></ul>
+        </div>
+        <div id="activity_area" hidden>
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button onclick="sendMessage(event)">Send</button>
         </div>
         <script>
             var ws = null
@@ -31,42 +34,70 @@
                     ws.close()
                     username.value = ""
                     document.getElementById("login_area").hidden = false
+                    document.getElementById("room_list_section").hidden = true
                     document.getElementById("activity_area").hidden = true
                     document.getElementById("view").value = ""
                 }
             }
-            function login(event) {
-                var user_id = document.getElementById("login_id").value
-                var room_id = document.getElementById("room_id").value
+            async function login(event) {
+                const user_id = document.getElementById("login_id").value
                 if (user_id === "") {
                     console.log("error")
                 } else {
                     document.getElementById("login_area").hidden = true
-                    document.getElementById("activity_area").hidden = false
-                    var username = document.getElementById("username")
-                    username.value = user_id
-                    ws = new WebSocket("ws://localhost:8000/ws/" + room_id + "?username=" + user_id);
-                    ws.onmessage = function(event) {
-                        var content = document.createTextNode(event.data)
-                        var textarea = document.getElementById("view")
-                        var received_msg = JSON.parse(event.data)
-                        let action = received_msg.action
-                        if (action === "send_msg") {
-                            textarea.value += received_msg.sender + ": " + received_msg.message + "\n"
-                        } else if (action === "enter") {
-                            textarea.value += received_msg.username + "님이 입장하였습니다.\n"
-                        } else if (action === "leave") {
-                            textarea.value += received_msg.username + "님이 퇴장하였습니다.\n"
-                        }
-                    };
+                    document.getElementById("room_list_section").hidden = false
+                    const room_ids = await get_room_list()
+                    let room_list = document.getElementById("room_list")
+                    room_ids.forEach((room_id) => {
+                        let room = document.createElement('li')
+                        const button = document.createElement("button")
+                        button.textContent = room_id
+                        button.id = room_id
+                        button.addEventListener("click", async () => {
+                            await enter_room(room_id)
+                        })
+                        room.appendChild(button)
+                        room_list.appendChild(room)
+                    })
                 }
             }
+            async function enter_room(room_id) {
+                document.getElementById("room_list_section").hidden = true
+                document.getElementById("activity_area").hidden = false
+                document.getElementById("textarea").hidden = false
+                const user_id = document.getElementById("login_id").value
+                ws = new WebSocket("ws://localhost:8000/ws/" + room_id + "?username=" + user_id);
+                ws.onmessage = function(event) {
+                    var content = document.createTextNode(event.data)
+                    var textarea = document.getElementById("view")
+                    var received_msg = JSON.parse(event.data)
+                    let action = received_msg.action
+                    if (action === "send_msg") {
+                        textarea.value += received_msg.sender + ": " + received_msg.message + "\n"
+                    } else if (action === "enter") {
+                        textarea.value += received_msg.username + "님이 입장하였습니다.\n"
+                    } else if (action === "leave") {
+                        textarea.value += received_msg.username + "님이 퇴장하였습니다.\n"
+                    }
+                };
+            }
+            async function get_room_list() {
+                const room_ids = await fetch("http://localhost:8000/rooms", {
+                    method: "GET",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }).then((response) => response.json())
+                .then((data) => data.rooms)
+                .catch((err) => {console.log("error", err)})
+                return room_ids
+            }
             function sendMessage(event) {
-                var username = document.getElementById("username")
+                var username = document.getElementById("login_id").value
                 var msg = document.getElementById("messageText")
                 var textarea = document.getElementById("view")
                 if (msg.value !== "") {
-                    ws.send(JSON.stringify({"action": "send_msg", "sender": username.value, "message": msg.value}))
+                    ws.send(JSON.stringify({"action": "send_msg", "sender": username, "message": msg.value}))
                     textarea.value += "나: " + msg.value + "\n"
                     msg.value = ''
                     event.preventDefault()
