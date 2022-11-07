@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from socket_handler import SocketHandler
+from chat.socket_handler import SocketHandler
 
 class ChattingRoom:
     entered_users: List[SocketHandler]
