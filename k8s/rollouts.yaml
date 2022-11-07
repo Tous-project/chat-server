@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name:  dev-chat-server-rollout
+spec:
+  replicas: 3
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: {duration: 60}
+        - setWeight: 40
+        - pause: {duration: 60}
+        - setWeight: 60
+        - pause: {duration: 60}
+        - setWeight: 80
+        - pause: {duration: 60}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: dev-chat-server
+  template:
+    metadata:
+      labels:
+        app: dev-chat-server
+    spec:
+      containers:
+      - name: dev-chat-server
+        imagePullPolicy: Always
+        image: ghcr.io/tous-project/chat-server/chat_server:develop
+        command: ["python3"]
+        args: ["main.py"]
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        resources:
+          limits:
+            memory: 128Mi
+            cpu: 20m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-chat-server-service
+spec:
+  type:  NodePort
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30003
+    protocol: TCP
+    name: http
+  selector:
+    app: dev-chat-server
