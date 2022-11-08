@@ -7,8 +7,8 @@ from typing import Dict
 from fastapi import APIRouter, Response, WebSocket, status, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
-from socket_handler import SocketHandler
-from chatting_room import ChattingRoom
+from chat.socket_handler import SocketHandler
+from chat.chatting_room import ChattingRoom
 
 router = APIRouter()
 chatting_rooms: Dict[str, ChattingRoom] = {}

@@ -23,7 +23,7 @@ class Config:
             return
         pattern = r"[\w\.]+[=]{1}[\w\.]+"
         args_parser = filter(lambda x: re.fullmatch(pattern, x), sys.argv)
-        with initialize(config_path="../config", version_base=None):
+        with initialize(config_path="../../config", version_base=None):
             self.__instance.__cfg = compose(
                 config_name="config", overrides=list(args_parser)
             )

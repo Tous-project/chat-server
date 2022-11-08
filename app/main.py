@@ -8,8 +8,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from conf import config
-from router import router
+from common.conf import config
+from chat.router import router as chat_router
 
 ALLOW_METHOD_LIST = ["GET", "POST", "PATCH", "DELETE"]
 ENV = environ.get("ENV", "prod")
@@ -17,7 +17,7 @@ reload = ENV == "dev"
 cfg = config("server")
 
 app = FastAPI(title="Chat API Server", version="1.0.0")
-app.include_router(router)
+app.include_router(chat_router)
 
 app.add_middleware(
     CORSMiddleware,
