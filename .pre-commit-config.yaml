@@ -14,8 +14,6 @@ repos:
     hooks:
     -   id: isort
         args:
-            - "-a"
-            - "from __future__ import annotations"
             - "--profile"
             - "black"
             - "-l 90"
