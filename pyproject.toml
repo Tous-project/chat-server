@@ -12,6 +12,9 @@ pydantic = "^1.9.2"
 hydra-core = "^1.2.0"
 rich = "^12.5.1"
 websockets = "^10.3"
+SQLAlchemy = "^1.4.43"
+psycopg2-binary = "^2.9.5"
+dependency-injector = "^4.40.0"
 
 [tool.poetry.dev-dependencies]
 pytest-sugar = "^0.9.5"
