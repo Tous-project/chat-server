@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from uuid import uuid4
 
-from sqlalchemy import Column, Integer, String
-
 from common.database import Base
+from sqlalchemy import Column, Integer, String
 
 
 class User(Base):

@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import json
 from typing import List
 
 from chat.socket_handler import SocketHandler
+
 
 class ChattingRoom:
     entered_users: List[SocketHandler]

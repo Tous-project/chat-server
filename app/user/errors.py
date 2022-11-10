@@ -1,4 +1,7 @@
-from common.errors import NotFoundError, DatabaseIntegrityError
+# -*- coding: utf-8 -*-
+from __future__ import annotations
+
+from common.errors import DatabaseIntegrityError, NotFoundError
 
 
 class UserNotFoundByIdError(NotFoundError):

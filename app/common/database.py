@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import AbstractContextManager, contextmanager
-from typing import Callable
+from typing import Callable, Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -29,8 +29,8 @@ class Database:
         Base.metadata.create_all(self._engine, checkfirst=True)
 
     @contextmanager
-    def session(self) -> Callable[..., AbstractContextManager[Session]]:
-        session = self._session_factory()
+    def session(self) -> Generator[AbstractContextManager[Session], None, None]:
+        session: Session = self._session_factory()
         try:
             yield session
         except Exception as e:

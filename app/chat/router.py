@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import annotations
 
 from typing import Dict
 
-from fastapi import APIRouter, Response, WebSocket, status, WebSocketDisconnect
-from fastapi.responses import JSONResponse
-
-from chat.socket_handler import SocketHandler
 from chat.chatting_room import ChattingRoom
+from chat.socket_handler import SocketHandler
+from fastapi import APIRouter, Response, WebSocket, WebSocketDisconnect, status
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 chatting_rooms: Dict[str, ChattingRoom] = {}
