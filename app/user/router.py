@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, status, Response
+# -*- coding: utf-8 -*-
+import logging
+
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from dependency_injector.wiring import inject, Provide
 
-from common.container import ApplicationContainer
-from common.response import ErrorResponse
-from user.service import UserService
-from user.request import CreateUser
-from user.response import AllUsers, CreatedUser, User
-from user.errors import CannotCreateUserError, UserNotFoundByIdError
+from .errors import CannotCreateUserError, UserNotFoundByIdError
+from .request import CreateUser
+from .response import AllUsers, CreatedUser, User
+from .service import UserService
 
-from rich import inspect
-import logging
+from common.container import ApplicationContainer  # isort:skip
+from common.response import ErrorResponse  # isort:skip
 
 logger = logging.getLogger(__name__)
 

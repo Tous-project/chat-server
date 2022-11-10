@@ -1,12 +1,11 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from dependency_injector import containers, providers
-
-from common.database import PostgreSQL
 from common.conf import config
-
-from user.service import UserService
+from common.database import PostgreSQL
+from dependency_injector import containers, providers
 from user.repository import UserRepository
+from user.service import UserService
 
 
 class DatabaseContainer(containers.DeclarativeContainer):
@@ -20,17 +19,13 @@ class DatabaseContainer(containers.DeclarativeContainer):
 class RepositoryContainer(containers.DeclarativeContainer):
     db = providers.DependenciesContainer()
 
-    user = providers.Factory(
-        UserRepository, session_factory=db.postgres.provided.session
-    )
+    user = providers.Factory(UserRepository, session_factory=db.postgres.provided.session)
 
 
 class ServiceContainer(containers.DeclarativeContainer):
     repository = providers.DependenciesContainer()
 
-    user = providers.Factory(
-        UserService, user_repository=repository.user
-    )
+    user = providers.Factory(UserService, user_repository=repository.user)
 
 
 class ApplicationContainer(containers.DeclarativeContainer):

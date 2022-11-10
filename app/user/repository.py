@@ -1,18 +1,18 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractContextManager
 from typing import Callable, Iterator
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-
+from sqlalchemy.orm import Session
+from user.errors import CannotCreateUserError, UserNotFoundByIdError
 from user.models import User
-from user.errors import UserNotFoundByIdError, CannotCreateUserError
 
 
 class UserRepository:
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[Session]]
+        self, session_factory: Callable[..., AbstractContextManager[Session]]
     ) -> None:
         self.session_factory = session_factory
 
