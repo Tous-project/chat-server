@@ -21,7 +21,7 @@ class Config:
     def __init__(self) -> None:
         if self.__instance is None:
             return
-        pattern = r"[\w\.]+[=]{1}[\w\.]+"
+        pattern = r"[\w\.]+=[\S]+"
         args_parser = filter(lambda x: re.fullmatch(pattern, x), sys.argv)
         with initialize(config_path="../../config", version_base=None):
             self.__instance.__cfg = compose(
@@ -36,6 +36,7 @@ class Config:
         if config_name is None or not hasattr(self.__instance.__cfg, config_name):
             return self.__instance.__cfg
         return self.__instance.__cfg.get(config_name)
+
 
 config = Config()
 
