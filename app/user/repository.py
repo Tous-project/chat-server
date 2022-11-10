@@ -6,8 +6,14 @@ from typing import Callable, Iterator
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from user.errors import CannotCreateUserError, UserNotFoundByIdError
-from user.models import User
+from user.errors import (
+    CannotCreateUserError,
+    InvalidUserSessionError,
+    NotExistUserError,
+    UserNotFoundByIdError,
+    UserNotLoggedInError,
+)
+from user.models import User, UserSession
 
 
 class UserRepository:
@@ -44,4 +50,59 @@ class UserRepository:
             if not user:
                 raise UserNotFoundByIdError(id)
             session.delete(user)
+            session.commit()
+
+
+class UserSessionRepository:
+    def __init__(
+        self, session_factory: Callable[..., AbstractContextManager[Session]]
+    ) -> None:
+        self.session_factory = session_factory
+
+    def get_by_user_id(self, user_id: int) -> UserSession:
+        with self.session_factory() as session:
+            return (
+                session.query(UserSession).filter(UserSession.user_id == user_id).first()
+            )
+
+    def get_by_session_id(self, session_id: str) -> UserSession:
+        with self.session_factory() as session:
+            return (
+                session.query(UserSession)
+                .filter(UserSession.session_id == session_id)
+                .first()
+            )
+
+    def get_all(self, user_id: int) -> UserSession:
+        with self.session_factory() as session:
+            return session.query(UserSession).filter(UserSession.user_id == user_id).all()
+
+    def create(self, user_id: int) -> UserSession:
+        try:
+            with self.session_factory() as session:
+                new_user_session = UserSession(user_id=user_id)
+                session.add(new_user_session)
+                session.commit()
+                session.refresh(new_user_session)
+                return new_user_session
+        except IntegrityError:
+            raise NotExistUserError(user_id)
+
+    def delete_by_session_id(self, session_id: str) -> None:
+        with self.session_factory() as session:
+            user_session = (
+                session.query(UserSession)
+                .filter(UserSession.session_id == session_id)
+                .first()
+            )
+            if not user_session:
+                raise InvalidUserSessionError(session_id)
+            session.delete(user_session)
+            session.commit()
+
+    def delete_all(self, user_id) -> None:
+        with self.session_factory() as session:
+            all_user_sessions = self.get_all(user_id=user_id)
+            for user_session in all_user_sessions:
+                session.delete(user_session)
             session.commit()
