@@ -27,3 +27,8 @@ class NotExistUserError(DatabaseIntegrityError):
 class InvalidUserSessionError(DatabaseIntegrityError):
     def __init__(self, session_id: str) -> None:
         super().__init__(f"UserSession({session_id=!r}) is invalid value")
+
+
+class SessionAlreadyExistError(DatabaseIntegrityError):
+    def __init__(self, user_id: int) -> None:
+        super().__init__(f"User(id={user_id!r}) has already a session")
