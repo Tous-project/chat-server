@@ -18,3 +18,8 @@ class User(CreatedUser):
 
 class AllUsers(BaseModel):
     users: List[User]
+
+
+class CreatedUserSession(BaseModel):
+    session_id: str
+    user_id: int

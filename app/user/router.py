@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from typing import Union
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Response, status
@@ -8,8 +9,8 @@ from fastapi.responses import JSONResponse
 
 from .errors import CannotCreateUserError, UserNotFoundByIdError
 from .request import CreateUser
-from .response import AllUsers, CreatedUser, User
-from .service import UserService
+from .response import AllUsers, CreatedUser, CreatedUserSession, User
+from .service import UserService, UserSessionService
 
 from common.container import ApplicationContainer  # isort:skip
 from common.response import ErrorResponse  # isort:skip
@@ -17,6 +18,7 @@ from common.response import ErrorResponse  # isort:skip
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+USER_SESSION_TAGS = "UserSession"
 
 
 @router.get("/users", response_model=AllUsers)
@@ -83,5 +85,70 @@ def delete_user_by_id(
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/sessions", response_model=CreatedUserSession, tags=[USER_SESSION_TAGS])
+@inject
+def create_session(
+    user_id: int,
+    user_session: UserSessionService = Depends(
+        Provide[ApplicationContainer.service.user_session]
+    ),
+) -> JSONResponse:
+    try:
+        new_session = user_session.create(user_id=user_id)
+    except Exception as exception:
+        error = ErrorResponse(
+            error_message="Can't create session",
+            detail=exception.__repr__(),
+        )
+        return JSONResponse(
+            jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
+        )
+    return JSONResponse(
+        jsonable_encoder(new_session), status_code=status.HTTP_201_CREATED
+    )
+
+
+@router.delete("/sessions/{session_id}", tags=[USER_SESSION_TAGS])
+@inject
+def delete_session_by_session_id(
+    session_id: str,
+    user_session: UserSessionService = Depends(
+        Provide[ApplicationContainer.service.user_session]
+    ),
+) -> Union[Response, JSONResponse]:
+    try:
+        user_session.delete_by_session_id(session_id=session_id)
+    except Exception as exception:
+        error = ErrorResponse(
+            error_message="Can't delete session",
+            detail=exception.__repr__(),
+        )
+        return JSONResponse(
+            jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/sessions", tags=[USER_SESSION_TAGS])
+@inject
+def delete_all_sessions(
+    user_id: int,
+    user_session: UserSessionService = Depends(
+        Provide[ApplicationContainer.service.user_session]
+    ),
+) -> Union[Response, JSONResponse]:
+    try:
+        user_session.delete_all(user_id=user_id)
+    except Exception as exception:
+        error = ErrorResponse(
+            error_message="Can't delete session",
+            detail=exception.__repr__(),
+        )
+        return JSONResponse(
+            jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
