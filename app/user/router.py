@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from .errors import CannotCreateUserError, UserNotFoundByIdError
 from .request import CreateUser
 from .response import AllUsers, CreatedUser, CreatedUserSession, User
 from .service import UserService, UserSessionService
@@ -39,10 +38,10 @@ def get_user_by_id(
 ) -> JSONResponse:
     try:
         user = user_service.get_by_id(id=id)
-    except UserNotFoundByIdError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't found user",
-            detail=f"Doesn't exist data User({id=!r})",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
@@ -60,10 +59,10 @@ def create_user(
         new_user = user_service.create(
             name=user.name, email=user.email, password=user.password
         )
-    except CannotCreateUserError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't create user",
-            detail=f"Duplicated data {user.__repr__()}",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
@@ -79,10 +78,10 @@ def delete_user_by_id(
 ) -> JSONResponse:
     try:
         user_service.delete_by_id(id=id)
-    except UserNotFoundByIdError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't delete user",
-            detail=f"Doesn't exist data User({id=!r})",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
