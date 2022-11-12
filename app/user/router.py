@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from .errors import CannotCreateUserError, UserNotFoundByIdError
 from .request import CreateUser
 from .response import AllUsers, CreatedUser, CreatedUserSession, User
 from .service import UserService, UserSessionService
@@ -18,10 +17,11 @@ from common.response import ErrorResponse  # isort:skip
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-USER_SESSION_TAGS = "UserSession"
+USER_TAGS = "User"
+USER_SESSION_TAGS = "User Session"
 
 
-@router.get("/users", response_model=AllUsers)
+@router.get("/users", response_model=AllUsers, tags=[USER_TAGS])
 @inject
 def get_user_list(
     user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
@@ -30,7 +30,7 @@ def get_user_list(
     return JSONResponse(jsonable_encoder(all_users), status_code=status.HTTP_200_OK)
 
 
-@router.get("/users/{id}", response_model=User)
+@router.get("/users/{id}", response_model=User, tags=[USER_TAGS])
 @inject
 def get_user_by_id(
     id: int,
@@ -38,10 +38,10 @@ def get_user_by_id(
 ) -> JSONResponse:
     try:
         user = user_service.get_by_id(id=id)
-    except UserNotFoundByIdError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't found user",
-            detail=f"Doesn't exist data User({id=!r})",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
@@ -49,7 +49,7 @@ def get_user_by_id(
     return JSONResponse(jsonable_encoder(user), status_code=status.HTTP_200_OK)
 
 
-@router.post("/users", response_model=CreatedUser)
+@router.post("/users", response_model=CreatedUser, tags=[USER_TAGS])
 @inject
 def create_user(
     user: CreateUser,
@@ -59,10 +59,10 @@ def create_user(
         new_user = user_service.create(
             name=user.name, email=user.email, password=user.password
         )
-    except CannotCreateUserError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't create user",
-            detail=f"Duplicated data {user.__repr__()}",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
@@ -70,7 +70,7 @@ def create_user(
     return JSONResponse(jsonable_encoder(new_user), status_code=status.HTTP_201_CREATED)
 
 
-@router.delete("/users/{id}")
+@router.delete("/users/{id}", tags=[USER_TAGS])
 @inject
 def delete_user_by_id(
     id: int,
@@ -78,10 +78,10 @@ def delete_user_by_id(
 ) -> JSONResponse:
     try:
         user_service.delete_by_id(id=id)
-    except UserNotFoundByIdError:
+    except Exception as exception:
         error = ErrorResponse(
             error_message="Can't delete user",
-            detail=f"Doesn't exist data User({id=!r})",
+            detail=exception.__repr__(),
         )
         return JSONResponse(
             jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
