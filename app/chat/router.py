@@ -123,6 +123,28 @@ async def get_all_chat_room_members(
     return JSONResponse(jsonable_encoder(users), status_code=status.HTTP_200_OK)
 
 
+@router.delete("/rooms/{room_id}/members/{user_id}", tags=[CHAT_ROOM_MEMBER_TAGS])
+@inject
+async def leave_chat_room(
+    room_id: int,
+    user_id: int,
+    chat_room_member: ChatRoomMemberService = Depends(
+        Provide[ApplicationContainer.service.chat_room_member]
+    ),
+) -> Union[Response, JSONResponse]:
+    try:
+        chat_room_member.leave(room_id=room_id, user_id=user_id)
+    except Exception as exception:
+        error = ErrorResponse(
+            error_message="Can't leave chat room",
+            detail=exception.__repr__(),
+        )
+        return JSONResponse(
+            jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
+        )
+    return Response(status_code=status.HTTP_200_OK)
+
+
 @router.get("/members/{user_id}/rooms", tags=[CHAT_ROOM_MEMBER_TAGS])
 @inject
 async def get_all_chat_rooms_the_user_joined(
