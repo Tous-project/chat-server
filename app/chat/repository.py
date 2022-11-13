@@ -90,7 +90,7 @@ class ChatRoomMemberRepository:
             joined_member = (
                 session.query(ChatRoomMember)
                 .filter(ChatRoomMember.id == room_id, ChatRoomMember.user_id == user_id)
-                .all()
+                .first()
             )
             if not joined_member:
                 raise UserIsNotChatRoomMemberError(room_id=room_id, user_id=user_id)
