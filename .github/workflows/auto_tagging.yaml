@@ -15,7 +15,7 @@ jobs:
     name: build
     runs-on: ubuntu-20.04
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
