@@ -8,7 +8,9 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     restart: unless-stopped
     container_name: chat
-    command: python3 main.py db.host=postgres:5432 db.id=${POSTGRES_USER:-postgres} db.name=${POSTGRES_DB:-postgres} db.password=${POSTGRES_PASSWORD:-1q2w3e4r}
+    command: python3 main.py
+    environment:
+      DSN: postgresql://postgres:1q2w3e4r@postgres:5432/postgres
     networks:
       - backend
     depends_on:
@@ -22,9 +24,9 @@ services:
     restart: always
     container_name: postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1q2w3e4r}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1q2w3e4r
+      POSTGRES_DB: postgres
     ports:
       - "8001:5432"
     networks:
