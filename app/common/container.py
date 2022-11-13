@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from chat.repository import ChatRoomMemberRepository, ChatRoomRepository
 from chat.service import ChatRoomMemberService, ChatRoomService
-from common.conf import config
+from common.conf import DataBaseConfig
 from common.database import PostgreSQL
 from dependency_injector import containers, providers
 from user.repository import UserRepository, UserSessionRepository
@@ -11,11 +11,9 @@ from user.service import UserService, UserSessionService
 
 
 class DatabaseContainer(containers.DeclarativeContainer):
-    cfg = config("db")
+    cfg = DataBaseConfig()
 
-    postgres = providers.Singleton(
-        PostgreSQL, host=cfg.host, id=cfg.id, name=cfg.name, password=cfg.password
-    )
+    postgres = providers.Singleton(PostgreSQL, dsn=cfg.DSN)
 
 
 class RepositoryContainer(containers.DeclarativeContainer):
@@ -57,8 +55,6 @@ class ServiceContainer(containers.DeclarativeContainer):
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
-    cfg = config("db")
-
     db = providers.Container(DatabaseContainer)
 
     repository = providers.Container(RepositoryContainer, db=db)

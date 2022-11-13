@@ -42,6 +42,5 @@ class Database:
 
 
 class PostgreSQL(Database):
-    def __init__(self, host: str, id: str, name: str, password: str) -> None:
-        url = f"postgresql://{id}:{password}@{host}/{name}"
-        super().__init__(url)
+    def __init__(self, dsn: str) -> None:
+        super().__init__(dsn)

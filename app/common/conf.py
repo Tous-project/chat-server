@@ -7,6 +7,15 @@ from typing import Any, Optional
 
 from hydra import compose, initialize
 from omegaconf import DictConfig
+from pydantic import BaseSettings
+
+
+class DataBaseConfig(BaseSettings):
+    DSN: str
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 class Config:
