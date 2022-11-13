@@ -57,8 +57,6 @@ class ServiceContainer(containers.DeclarativeContainer):
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
-    cfg = config("db")
-
     db = providers.Container(DatabaseContainer)
 
     repository = providers.Container(RepositoryContainer, db=db)
