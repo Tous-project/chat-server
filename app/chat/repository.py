@@ -63,7 +63,9 @@ class ChatRoomMemberRepository:
     def get_all_by_room_id(self, room_id: int) -> Iterator[ChatRoomMember]:
         with self.session_factory() as session:
             return (
-                session.query(ChatRoomMember).filter(ChatRoomMember.id == room_id).all()
+                session.query(ChatRoomMember)
+                .filter(ChatRoomMember.room_id == room_id)
+                .all()
             )
 
     def get_all_by_user_id(self, user_id: int) -> Iterator[ChatRoomMember]:
