@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from chat.repository import ChatRoomMemberRepository, ChatRoomRepository
+from chat.service import ChatRoomMemberService, ChatRoomService
 from common.conf import config
 from common.database import PostgreSQL
 from dependency_injector import containers, providers
@@ -25,6 +27,14 @@ class RepositoryContainer(containers.DeclarativeContainer):
         UserSessionRepository, session_factory=db.postgres.provided.session
     )
 
+    chat_room = providers.Factory(
+        ChatRoomRepository, session_factory=db.postgres.provided.session
+    )
+
+    chat_room_member = providers.Factory(
+        ChatRoomMemberRepository, session_factory=db.postgres.provided.session
+    )
+
 
 class ServiceContainer(containers.DeclarativeContainer):
     repository = providers.DependenciesContainer()
@@ -33,6 +43,16 @@ class ServiceContainer(containers.DeclarativeContainer):
 
     user_session = providers.Factory(
         UserSessionService, user_session_repository=repository.user_session
+    )
+
+    chat_room = providers.Factory(
+        ChatRoomService, chat_room_repository=repository.chat_room
+    )
+
+    chat_room_member = providers.Factory(
+        ChatRoomMemberService,
+        chat_room_member_repository=repository.chat_room_member,
+        chat_room_repository=repository.chat_room,
     )
 
 

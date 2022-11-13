@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Chat API Server", version=cfg.version)
     app.container = container
-    app.container.wire(modules=["user.router"])
+    app.container.wire(modules=["user.router", "chat.router"])
     app.include_router(user_router)
     app.include_router(chat_router)
 
