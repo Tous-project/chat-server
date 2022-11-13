@@ -15,7 +15,7 @@ spec:
       containers:
       - name: dev-chat-server
         imagePullPolicy: Always
-        image: ghcr.io/tous-project/chat-server/chat_server:develop
+        image: ghcr.io/tous-project/chat-server/chat_server:test0.1
         command: ["python3"]
         args: ["main.py"]
         ports:
