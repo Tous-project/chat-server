@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-database
+  labels:
+    app: dev-postgres
+spec:
+  selector:
+    matchLabels:
+      app: dev-postgres
+  template:
+    metadata:
+      labels:
+        app: dev-postgres
+    spec:
+      containers:
+      - image: postgres:15.0
+        name: dev-postgres
+        resources:
+          limits:
+            memory: 128Mi
+            cpu: 50m
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: user_name
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: password
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: db_name
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name:  dev-postgres-service
+  labels:
+    app: dev-postgres-service
+spec:
+  selector:
+    app: dev-postgres
+  type: NodePort
+  ports:
+    - port: 5432
+      targetPort: 5432
+      nodePort: 30004
+      protocol: TCP
+      name: dev-postgres
