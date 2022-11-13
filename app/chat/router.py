@@ -164,7 +164,7 @@ async def get_all_chat_rooms_the_user_joined(
             jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
         )
     return JSONResponse(
-        jsonable_encoder(joind_all_chat_rooms), status_code=status.HTTP_200_OK
+        jsonable_encoder(list(joind_all_chat_rooms)), status_code=status.HTTP_200_OK
     )
 
 
