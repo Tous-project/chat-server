@@ -1,0 +1,36 @@
+
+name: Auto tagging when pushed to develop-branch
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/chat_server
+
+jobs:
+  build-and-push:
+    name: build
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GHCR_ACCESS_TOKEN }}
+          tag_prefix: test.v
+
+      - name: Create a Github release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ step.tag_version.outputs.new_tag}}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.output.changelog }}
