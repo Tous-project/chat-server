@@ -5,10 +5,10 @@ on:
     tags:
       - "v*"
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -43,13 +43,13 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
-          push: ${{ github.ref_name != 'master' && github.event_name == 'push' }}
+          push: ${{ github.ref_name != 'main' && github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   auto-tagging:
     name: auto-tagging
     runs-on: ubuntu-20.04
-    if: github.ref_name == 'master' && github.event_name == 'push'
+    if: github.ref_name == 'main' && github.event_name == 'push'
     needs: build-and-push
     permissions:
       contents: write
@@ -61,7 +61,7 @@ jobs:
         with:
           github_token: ${{ secrets.GHCR_ACCESS_TOKEN }}
           tag_prefix: v
-          release_branches: master
+          release_branches: main
           custom_release_rules: "feat:minor,fix:patch,chore:patch,hotfix:patch,release:major"
       - name: Parse Change Log
         uses: ardalanamini/auto-changelog@v3
