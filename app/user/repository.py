@@ -10,8 +10,8 @@ from user.errors import (
     CannotCreateUserError,
     InvalidUserSessionError,
     NotExistUserError,
+    UserNotFoundByEmailError,
     UserNotFoundByIdError,
-    UserNotLoggedInError,
 )
 from user.models import User, UserSession
 
@@ -31,6 +31,13 @@ class UserRepository:
             user = session.query(User).filter(User.id == id).first()
             if not user:
                 raise UserNotFoundByIdError(id)
+            return user
+
+    def get_by_email(self, email: str) -> User:
+        with self.session_factory() as session:
+            user = session.query(User).filter(User.email == email).first()
+            if not user:
+                raise UserNotFoundByEmailError(email)
             return user
 
     def create(self, name: str, email: str, password: str) -> User:

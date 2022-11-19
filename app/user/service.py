@@ -22,6 +22,9 @@ class UserService:
     def get_by_id(self, id: int) -> User:
         return self._repository.get(id=id)
 
+    def get_by_email(self, email: str) -> User:
+        return self._repository.get_by_email(email)
+
     def create(self, name: str, email: str, password: str) -> User:
         return self._repository.create(name=name, email=email, password=password)
 
