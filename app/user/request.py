@@ -14,3 +14,8 @@ class UpdateUser(BaseModel):
     id: str
     password: str
     name: str
+
+
+class LoginUser(BaseModel):
+    email: str
+    password: str
