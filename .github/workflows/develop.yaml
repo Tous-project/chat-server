@@ -1,52 +1,64 @@
-name: development build and push docker image to ghcr.io
+name: Development Build and Push
 
 on:
   push:
+    tags-ignore:
+      - "v*"
     branches:
       - develop
-    tags:
-      - "dev*"
   pull_request:
     branches:
       - develop
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/chat_server
+  IMAGE_NAME: ${{ github.repository }}/chat-server
 
 jobs:
   build-and-push:
-    name: build
+    name: build and push
     runs-on: ubuntu-20.04
     permissions:
       contents: read
       packages: write
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_ACCESS_TOKEN }}
-
       - name: Extract metadata (tag, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern=dev{{version}}
-            type=semver,pattern=dev{{major}}.{{minor}}
+            type=ref,event=tag
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./docker/Dockerfile.dev
-          push: ${{ github.event_name != 'pull_request' }}
+          file: ./docker/Dockerfile
+          push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  auto-tagging:
+    name: auto-tagging
+    if: github.event_name == 'push' && github.ref_name == 'develop'
+    needs: build-and-push
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GHCR_ACCESS_TOKEN }}
+          tag_prefix: dev
+          release_branches: develop
+          custom_release_rules: "feat:minor,fix:patch,chore:patch,hotfix:patch"
