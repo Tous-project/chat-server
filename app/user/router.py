@@ -3,16 +3,17 @@ import logging
 from typing import Union
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Header, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from .request import CreateUser
+from .request import CreateUser, LoginUser
 from .response import AllUsers, CreatedUser, CreatedUserSession, User
 from .service import UserService, UserSessionService
 
 from common.container import ApplicationContainer  # isort:skip
 from common.response import ErrorResponse  # isort:skip
+from common.authenticate import Session  # isort:skip
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,9 @@ USER_SESSION_TAGS = "User Session"
 @router.get("/users", response_model=AllUsers, tags=[USER_TAGS])
 @inject
 def get_user_list(
+    x_session_id: str = Header(...),
     user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
+    current_user: User = Depends(Session.verify),
 ) -> JSONResponse:
     all_users = user_service.get_all()
     return JSONResponse(jsonable_encoder(all_users), status_code=status.HTTP_200_OK)
@@ -34,7 +37,9 @@ def get_user_list(
 @inject
 def get_user_by_id(
     id: int,
+    x_session_id: str = Header(...),
     user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
+    current_user: User = Depends(Session.verify),
 ) -> JSONResponse:
     try:
         user = user_service.get_by_id(id=id)
@@ -74,7 +79,9 @@ def create_user(
 @inject
 def delete_user_by_id(
     id: int,
+    x_session_id: str = Header(...),
     user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
+    current_uesr: User = Depends(Session.verify),
 ) -> JSONResponse:
     try:
         user_service.delete_by_id(id=id)
@@ -92,13 +99,24 @@ def delete_user_by_id(
 @router.post("/sessions", response_model=CreatedUserSession, tags=[USER_SESSION_TAGS])
 @inject
 def create_session(
-    user_id: int,
+    account: LoginUser,
     user_session: UserSessionService = Depends(
         Provide[ApplicationContainer.service.user_session]
     ),
+    user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
+    session_storage: Session = Depends(Session.get_local_session),
 ) -> JSONResponse:
     try:
-        new_session = user_session.create(user_id=user_id)
+        user = user_service.get_by_email(email=account.email)
+        if user.password != account.password:
+            error = ErrorResponse(
+                error_message="Can't login", detail="User account is incorrect"
+            )
+            return JSONResponse(
+                jsonable_encoder(error), status_code=status.HTTP_404_NOT_FOUND
+            )
+        new_session = user_session.create(user_id=user.id)
+        session_storage.set(key=new_session.session_id, value=user)
     except Exception as exception:
         error = ErrorResponse(
             error_message="Can't create session",
@@ -116,9 +134,11 @@ def create_session(
 @inject
 def delete_session_by_session_id(
     session_id: str,
+    x_session_id: str = Header(...),
     user_session: UserSessionService = Depends(
         Provide[ApplicationContainer.service.user_session]
     ),
+    current_uesr: User = Depends(Session.verify),
 ) -> Union[Response, JSONResponse]:
     try:
         user_session.delete_by_session_id(session_id=session_id)
@@ -136,13 +156,14 @@ def delete_session_by_session_id(
 @router.delete("/sessions", tags=[USER_SESSION_TAGS])
 @inject
 def delete_all_sessions(
-    user_id: int,
+    x_session_id: str = Header(...),
     user_session: UserSessionService = Depends(
         Provide[ApplicationContainer.service.user_session]
     ),
+    current_uesr: User = Depends(Session.verify),
 ) -> Union[Response, JSONResponse]:
     try:
-        user_session.delete_all(user_id=user_id)
+        user_session.delete_all(user_id=current_uesr.id)
     except Exception as exception:
         error = ErrorResponse(
             error_message="Can't delete session",
