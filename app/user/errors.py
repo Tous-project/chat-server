@@ -9,6 +9,11 @@ class UserNotFoundByIdError(NotFoundError):
         super().__init__(f"User(id={id!r}) not found")
 
 
+class UserNotFoundByEmailError(NotFoundError):
+    def __init__(self, email: str) -> None:
+        super().__init__(f"User({email=!r}) not found")
+
+
 class CannotCreateUserError(DatabaseIntegrityError):
     def __init__(self, name: str, email: str) -> None:
         super().__init__(f"Cannot create User({name=!r}, {email=!r})")
