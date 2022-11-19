@@ -139,8 +139,10 @@ def delete_session_by_session_id(
         Provide[ApplicationContainer.service.user_session]
     ),
     current_uesr: User = Depends(Session.verify),
+    session_storage: Session = Depends(Session.get_local_session),
 ) -> Union[Response, JSONResponse]:
     try:
+        session_storage.delete(session_id)
         user_session.delete_by_session_id(session_id=session_id)
     except Exception as exception:
         error = ErrorResponse(
