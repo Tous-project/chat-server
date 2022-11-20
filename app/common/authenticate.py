@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from dataclasses import dataclass, field
-from typing import Dict, Generator, Iterator
+from dataclasses import dataclass
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, status
@@ -13,27 +12,6 @@ from .container import ApplicationContainer
 
 @dataclass(frozen=True)
 class Session:
-    storage: Dict[str, User] = field(default_factory=dict)
-
-    def __getitem__(self, key: str) -> User:
-        return self.storage.get(key, {})
-
-    def __setitem__(self, key: str, value: User) -> None:
-        self.storage.update({key: value})
-
-    def __iter__(self) -> Iterator:
-        return iter(self.storage.keys())
-
-    def get(self, key: str) -> User:
-        return self.storage.get(key, {})
-
-    def set(self, key: str, value: User) -> None:
-        self.storage.update({key: value})
-
-    def delete(self, key: str) -> None:
-        context = self.storage.pop(key)
-        del context
-
     @classmethod
     @inject
     def verify(
@@ -43,7 +21,7 @@ class Session:
         user_session_service: UserSessionService = Depends(
             Provide[ApplicationContainer.service.user_session]
         ),
-    ) -> Generator:
+    ) -> User:
         session_id: str = request.headers.get("x-session-id")
         if not session_id:
             raise HTTPException(
@@ -59,9 +37,4 @@ class Session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in"
             )
-        cls.storage.update(key=session_id, value=user)
-        yield user
-
-    @classmethod
-    def get_local_session(self) -> Generator:
-        yield Session()
+        return user
