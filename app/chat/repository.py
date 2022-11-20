@@ -91,7 +91,9 @@ class ChatRoomMemberRepository:
         with self.session_factory() as session:
             joined_member = (
                 session.query(ChatRoomMember)
-                .filter(ChatRoomMember.id == room_id, ChatRoomMember.user_id == user_id)
+                .filter(
+                    ChatRoomMember.room_id == room_id, ChatRoomMember.user_id == user_id
+                )
                 .first()
             )
             if not joined_member:
