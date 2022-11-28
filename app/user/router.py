@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from .request import CreateUser, LoginUser
-from .response import AllUsers, CreatedUser, CreatedUserSession, User
+from .response import AllUsers, CreatedUserSession, User
 from .service import UserService, UserSessionService
 
 from common.container import ApplicationContainer  # isort:skip
@@ -54,7 +54,7 @@ def get_user_by_id(
     return JSONResponse(jsonable_encoder(user), status_code=status.HTTP_200_OK)
 
 
-@router.post("/users", response_model=CreatedUser, tags=[USER_TAGS])
+@router.post("/users", response_model=User, tags=[USER_TAGS])
 @inject
 def create_user(
     user: CreateUser,
@@ -82,7 +82,7 @@ def delete_user_by_id(
     x_session_id: str = Header(...),
     user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
     current_uesr: User = Depends(Session.verify),
-) -> JSONResponse:
+) -> Union[JSONResponse, Response]:
     try:
         user_service.delete_by_id(id=id)
     except Exception as exception:

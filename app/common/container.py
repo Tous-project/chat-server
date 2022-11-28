@@ -44,7 +44,9 @@ class ServiceContainer(containers.DeclarativeContainer):
     )
 
     chat_room = providers.Factory(
-        ChatRoomService, chat_room_repository=repository.chat_room
+        ChatRoomService,
+        chat_room_repository=repository.chat_room,
+        chat_room_member_repository=repository.chat_room_member,
     )
 
     chat_room_member = providers.Factory(

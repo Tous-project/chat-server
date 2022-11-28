@@ -5,5 +5,6 @@ from pydantic import BaseModel
 
 
 class CreateChatRoom(BaseModel):
+    owner: int
     name: str
     description: Optional[str]
