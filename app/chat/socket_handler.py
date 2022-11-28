@@ -4,13 +4,13 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import WebSocket
-from user.response import CreatedUser
+from user.response import User
 
 
 class SocketHandler:
     socket: Optional[WebSocket] = None
 
-    def __init__(self, socket: WebSocket, user: CreatedUser) -> None:
+    def __init__(self, socket: WebSocket, user: User) -> None:
         self.socket = socket
         self.__user = user
 
@@ -19,7 +19,7 @@ class SocketHandler:
         return self.__user.id
 
     @property
-    def user(self) -> CreatedUser:
+    def user(self) -> User:
         return self.__user
 
     @property

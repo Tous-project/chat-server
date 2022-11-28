@@ -2,7 +2,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, status
 from starlette.requests import Request
-from user.models import User
+from user.response import User
 from user.service import UserService, UserSessionService
 
 from .container import ApplicationContainer
@@ -33,7 +33,7 @@ class Session:
         user_session_service: UserSessionService = Depends(
             Provide[ApplicationContainer.service.user_session]
         ),
-    ) -> CreatedUser:
+    ) -> User:
         if not session_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Required Session id"
@@ -48,4 +48,4 @@ class Session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in"
             )
-        return user
+        return User(**user.__dict__)

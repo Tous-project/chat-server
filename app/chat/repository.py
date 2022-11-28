@@ -6,6 +6,7 @@ from typing import Callable, Iterator
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from user.models import User
 
 from .errors import (
     CannotCreateChatRoomError,
@@ -26,6 +27,20 @@ class ChatRoomRepository:
         with self.session_factory() as session:
             return session.query(ChatRoom).all()
 
+    def get_all_members(self, room_id: int) -> Iterator[User]:
+        with self.session_factory() as session:
+            room = session.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+            return iter([member.user for member in room.members])
+
+    def get_all_joined_room(self, user_id: int) -> Iterator[ChatRoom]:
+        with self.session_factory() as session:
+            joined_rooms = (
+                session.query(ChatRoomMember)
+                .filter(ChatRoomMember.user_id == user_id)
+                .all()
+            )
+            return iter([joined.room for joined in joined_rooms])
+
     def get_by_id(self, room_id: int) -> ChatRoom:
         with self.session_factory() as session:
             return session.query(ChatRoom).filter(ChatRoom.id == room_id).first()
@@ -34,10 +49,10 @@ class ChatRoomRepository:
         with self.session_factory() as session:
             return session.query(ChatRoom).filter(ChatRoom.name == name).first()
 
-    def create(self, name: str, description: str = None) -> ChatRoom:
+    def create(self, owner: int, name: str, description: str = None) -> ChatRoom:
         try:
             with self.session_factory() as session:
-                new_room = ChatRoom(name=name, description=description)
+                new_room = ChatRoom(owner=owner, name=name, description=description)
                 session.add(new_room)
                 session.commit()
                 session.refresh(new_room)
