@@ -1,19 +1,34 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import Optional
+
 from fastapi import WebSocket
+from user.response import CreatedUser
 
 
 class SocketHandler:
-    socket: WebSocket = None
+    socket: Optional[WebSocket] = None
 
-    def __init__(self, socket: WebSocket, username: str) -> None:
+    def __init__(self, socket: WebSocket, user: CreatedUser) -> None:
         self.socket = socket
-        self.__username = username
+        self.__user = user
 
     @property
-    def username(self) -> str:
-        return self.__username
+    def user_id(self) -> int:
+        return self.__user.id
+
+    @property
+    def user(self) -> CreatedUser:
+        return self.__user
+
+    @property
+    def user_name(self) -> str:
+        return self.__user.name
+
+    @property
+    def user_email(self) -> str:
+        return self.__user.email
 
     async def connect(self) -> None:
         if self.socket is None:
@@ -30,5 +45,5 @@ class SocketHandler:
         await self.socket.send_text(text)
 
     async def receive(self) -> str:
-        received = await self.socket.receive_text()
+        received = await self.socket.receive_json()
         return received

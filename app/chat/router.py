@@ -2,7 +2,6 @@
 
 from typing import Dict, Union
 
-from chat.chatting_room import ChattingRoom
 from chat.socket_handler import SocketHandler
 from common.container import ApplicationContainer
 from common.response import ErrorResponse
@@ -29,7 +28,6 @@ from common.authenticate import Session  # isort:skip
 router = APIRouter()
 CHAT_ROOM_TAGS = "Chat Room"
 CHAT_ROOM_MEMBER_TAGS = "Chat Room Members"
-chatting_rooms: Dict[str, ChattingRoom] = {}
 
 
 @router.get("/healthz")
@@ -195,20 +193,24 @@ async def get_all_chat_rooms_i_joined(
 
 
 @router.websocket("/ws/rooms/{room_id}")
+@inject
 async def enter_chatting_room(
     socket: WebSocket,
     room_id: str,
     x_session_id: str = Header(...),
-    current_user: Session = Depends(Session.verify),
+    chat_room_service: ChatRoomService = Depends(
+        Provide[ApplicationContainer.service.chat_room],
+    ),
 ) -> None:
-    if room_id not in chatting_rooms:
-        chatting_rooms[room_id] = ChattingRoom()
-    room = chatting_rooms[room_id]
-    user = SocketHandler(socket, current_user.name)
-    await room.enter(user)
+    current_user = Session.verify_by_session_id(session_id=x_session_id)
+    user = SocketHandler(socket=socket, user=current_user)
+    if not chat_room_service.is_member(room_id=room_id, user=current_user):
+        raise
+    await chat_room_service.enter(room_id=room_id, user=user)
     try:
         while True:
             recv_data = await user.receive()
             await room.send(sender=user, message=recv_data)
     except WebSocketDisconnect:
-        await room.leave(user)
+        chat_room_service.exit(room_id=room_id, user=user)
+        logger.info(f"{current_user.__repr__()} is disconnected")
