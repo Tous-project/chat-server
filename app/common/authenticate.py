@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from dataclasses import dataclass
-
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, status
 from starlette.requests import Request
@@ -10,12 +8,10 @@ from user.service import UserService, UserSessionService
 from .container import ApplicationContainer
 
 
-@dataclass(frozen=True)
 class Session:
-    @classmethod
+    @staticmethod
     @inject
     def verify(
-        cls,
         request: Request,
         user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
         user_session_service: UserSessionService = Depends(
@@ -23,6 +19,21 @@ class Session:
         ),
     ) -> User:
         session_id: str = request.headers.get("x-session-id")
+        return Session.verify_by_session_id(
+            session_id=session_id,
+            user_service=user_service,
+            user_session_service=user_session_service,
+        )
+
+    @staticmethod
+    @inject
+    def verify_by_session_id(
+        session_id: str,
+        user_service: UserService = Depends(Provide[ApplicationContainer.service.user]),
+        user_session_service: UserSessionService = Depends(
+            Provide[ApplicationContainer.service.user_session]
+        ),
+    ) -> CreatedUser:
         if not session_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Required Session id"

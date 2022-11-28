@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Iterator
 
+from .const import MessageReceiverType, MessageType
 from .errors import (
     AlreadyJoinedError,
     ChatRoomAlreadyExistError,
@@ -14,8 +15,29 @@ from .repository import ChatRoomMemberRepository, ChatRoomRepository
 
 
 class ChatRoomService:
-    def __init__(self, chat_room_repository: ChatRoomRepository) -> None:
+    __instance: Optional[ChatRoomService] = None
+    rooms: Dict[int, List[SocketHandler]] = {}
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> ChatRoomService:
+        if not isinstance(cls.__instance, cls):
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
+    def __init__(
+        self,
+        chat_room_repository: ChatRoomRepository,
+        chat_room_member_repository: ChatRoomMemberRepository,
+    ) -> None:
         self._repository = chat_room_repository
+        self._member_repository = chat_room_member_repository
+        self = self.update()
+
+    def update(self) -> ChatRoomService:
+        old_rooms = self.__instance.rooms
+        new_rooms = self.get_all()
+        self.__instance.rooms = dict.fromkeys([room.id for room in new_rooms], [])
+        self.__instance.rooms.update(old_rooms)
+        return self.__instance
 
     def get_all(self) -> Iterator[ChatRoom]:
         return self._repository.get_all()
@@ -37,6 +59,60 @@ class ChatRoomService:
         if not is_exist:
             raise ChatRoomNotFoundByIdError(room_id=room_id)
         return self._repository.delete_by_room_id(room_id=room_id)
+
+    def get_all_joined_chat_rooms(self, user_id: int) -> Iterator[ChatRoom]:
+        return self._repository.get_all_joined_room(user_id=user_id)
+
+    def get_all_joined_members(self, room_id: int) -> Iterator[ChatRoomMember]:
+        return self._repository.get_all_members(room_id=room_id)
+
+    def join(self, room_id: int, user: CreatedUser) -> None:
+        if self.is_member(room_id=room_id, user=user):
+            raise AlreadyJoinedError(room_id=room_id, user_id=user.id)
+        self._member_repository.create(room_id=room_id, user_id=user.id)
+
+    async def leave(self, room_id: int, user: SocketHandler) -> None:
+        if self.is_member(room_id=room_id, user=user.user):
+            raise UserIsNotChatRoomMemberError(room_id=room_id, user_id=user.user_id)
+        self.exit(room_id=room_id, user=user)
+        leave_msg = SystemMessage(
+            text=f"{user.user_name!r}님이 퇴장하셨습니다.",
+            type=MessageType.NOTIFICATION,
+            receiver=MessageReceiverType.USERS,
+        )
+        await self.broadcast(room_id=room_id, message=leave_msg)
+        return self._member_repository.delete_by_user_id(
+            room_id=room_id, user_id=user.user_id
+        )
+
+    def is_member(self, room_id: int, user: CreatedUser) -> bool:
+        members = self._repository.get_all_members(room_id=room_id)
+        return any(member.id == user.id for member in members)
+
+    async def enter(self, room_id: int, user: SocketHandler) -> None:
+        await user.connect()
+        self.__instance.rooms[room_id].append(user)
+        welcome_msg = SystemMessage(
+            text=f"{user.user_name!r}님이 입장하셨습니다.",
+            type=MessageType.NOTIFICATION,
+            receiver=MessageReceiverType.USERS,
+        )
+        await self.broadcast(room_id=room_id, message=welcome_msg)
+
+    def exit(self, room_id: int, user: SocketHandler) -> None:
+        self.__instance.rooms[room_id].remove(user)
+
+    async def broadcast(self, room_id: int, message: BaseMessage) -> None:
+        for user in self.__instance.rooms[room_id]:
+            await user.send(jsonable_encoder(message))
+
+    async def send(
+        self, room_id: int, sender: SocketHandler, message: BaseMessage
+    ) -> None:
+        for user in self.__instance.rooms[room_id]:
+            if user == sender:
+                continue
+            await user.send(jsonable_encoder(message))
 
 
 class ChatRoomMemberService:
