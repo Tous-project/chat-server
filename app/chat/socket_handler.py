@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import WebSocket
 from user.response import User
@@ -44,6 +44,6 @@ class SocketHandler:
             raise ValueError("socket is empty")
         await self.socket.send_text(text)
 
-    async def receive(self) -> str:
+    async def receive(self) -> Dict:
         received = await self.socket.receive_json()
         return received
