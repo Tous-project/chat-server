@@ -187,7 +187,7 @@ async def get_all_chat_rooms_i_joined(
 
 @router.websocket("/ws/rooms/{room_id}")
 @inject
-async def enter_chatting_room(
+async def chat_with_other_users(
     socket: WebSocket,
     room_id: int,
     x_session_id: str,
