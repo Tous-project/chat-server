@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from chat.pubsub import ChatServer
 from chat.repository import ChatRoomMemberRepository, ChatRoomRepository
 from chat.service import ChatRoomMemberService, ChatRoomService
-from common.conf import DataBaseConfig
+from common.conf import PostgreSQLConfig, RedisConfig
 from common.database import PostgreSQL
 from dependency_injector import containers, providers
 from user.repository import UserRepository, UserSessionRepository
 from user.service import UserService, UserSessionService
 
 
+class RedisContainer(containers.DeclarativeContainer):
+    cfg = RedisConfig()
+
+    chat_server = providers.Factory(ChatServer, dsn=cfg.DSN)
+
+
 class DatabaseContainer(containers.DeclarativeContainer):
-    cfg = DataBaseConfig()
+    cfg = PostgreSQLConfig()
 
     postgres = providers.Singleton(PostgreSQL, dsn=cfg.DSN)
 
@@ -58,6 +65,8 @@ class ServiceContainer(containers.DeclarativeContainer):
 
 class ApplicationContainer(containers.DeclarativeContainer):
     db = providers.Container(DatabaseContainer)
+
+    redis = providers.Container(RedisContainer)
 
     repository = providers.Container(RepositoryContainer, db=db)
 

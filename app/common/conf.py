@@ -18,6 +18,16 @@ class DataBaseConfig(BaseSettings):
         env_file_encoding = "utf-8"
 
 
+class PostgreSQLConfig(DataBaseConfig):
+    class Config:
+        env_prefix = "POSTGRESQL_"
+
+
+class RedisConfig(DataBaseConfig):
+    class Config:
+        env_prefix = "REDIS_"
+
+
 class Config:
     __instance: Optional[Config] = None
     __cfg: Optional[DictConfig] = None

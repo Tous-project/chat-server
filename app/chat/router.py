@@ -7,20 +7,12 @@ from chat.socket_handler import SocketHandler
 from common.container import ApplicationContainer
 from common.response import ErrorResponse
 from dependency_injector.wiring import Provide, inject
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    Response,
-    WebSocket,
-    WebSocketDisconnect,
-    status,
-)
+from fastapi import APIRouter, Depends, Header, Response, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from user.response import User
-from user.service import UserService
 
+from .pubsub import ChatServer
 from .request import CreateChatRoom
 from .service import ChatRoomMemberService, ChatRoomService
 
@@ -195,23 +187,23 @@ async def get_all_chat_rooms_i_joined(
 
 @router.websocket("/ws/rooms/{room_id}")
 @inject
-async def enter_chatting_room(
+async def chat_with_other_users(
     socket: WebSocket,
     room_id: int,
-    x_session_id: str = Header(...),
+    x_session_id: str,
     chat_room_service: ChatRoomService = Depends(
         Provide[ApplicationContainer.service.chat_room],
+    ),
+    chat_server: ChatServer = Depends(
+        Provide[ApplicationContainer.redis.chat_server],
     ),
 ) -> None:
     current_user = Session.verify_by_session_id(session_id=x_session_id)
     user = SocketHandler(socket=socket, user=current_user)
+    channel_name = f"chat:{str(room_id)}"
     if not chat_room_service.is_member(room_id=room_id, user=current_user):
         raise
-    await chat_room_service.enter(room_id=room_id, user=user)
-    try:
-        while True:
-            recv_data = await user.receive()
-            await chat_room_service.send(room_id=room_id, sender=user, message=recv_data)
-    except WebSocketDisconnect:
-        chat_room_service.exit(room_id=room_id, user=user)
-        logger.info(f"{current_user.__repr__()} is disconnected")
+    await user.connect()
+
+    await chat_server.init(name=channel_name, user_socket=user)
+    await chat_server.connect(send_welcome_message=True)
