@@ -116,25 +116,3 @@ def delete_session_by_session_id(
             jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.delete("/sessions", tags=[USER_SESSION_TAGS])
-@inject
-def delete_all_sessions(
-    x_session_id: str = Header(...),
-    user_session: UserSessionService = Depends(
-        Provide[ApplicationContainer.service.user_session]
-    ),
-    current_uesr: User = Depends(Session.verify),
-) -> Union[Response, JSONResponse]:
-    try:
-        user_session.delete_all(user_id=current_uesr.id)
-    except Exception as exception:
-        error = ErrorResponse(
-            error_message="Can't delete session",
-            detail=exception.__repr__(),
-        )
-        return JSONResponse(
-            jsonable_encoder(error), status_code=status.HTTP_400_BAD_REQUEST
-        )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
